@@ -506,6 +506,33 @@ with st.sidebar:
     if _n_temp:
         st.caption(f"🗄️ 暫存中：{_n_temp} 筆")
 
+    st.divider()
+
+    # ── 一鍵清除資料 ────────────────────────────────────────────────────────────
+    st.caption("**⚠️ 危險操作**")
+    if "confirm_clear" not in st.session_state:
+        st.session_state.confirm_clear = False
+
+    if not st.session_state.confirm_clear:
+        if st.button("🗑️ 清除所有資料", use_container_width=True):
+            st.session_state.confirm_clear = True
+            st.rerun()
+    else:
+        st.warning("確定要清除全部資料嗎？此操作無法復原。")
+        _cc1, _cc2 = st.columns(2)
+        with _cc1:
+            if st.button("✅ 確認清除", use_container_width=True, type="primary"):
+                for _k in ["df", "ev", "la_date", "la_show_all",
+                           "mb_date", "tgt_date", "tgt_shift", "g_kw", "g_rg"]:
+                    if _k in st.session_state:
+                        del st.session_state[_k]
+                st.session_state.confirm_clear = False
+                st.rerun()
+        with _cc2:
+            if st.button("❌ 取消", use_container_width=True):
+                st.session_state.confirm_clear = False
+                st.rerun()
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PAGE HEADER
