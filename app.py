@@ -522,10 +522,13 @@ with st.sidebar:
         _cc1, _cc2 = st.columns(2)
         with _cc1:
             if st.button("✅ 確認清除", use_container_width=True, type="primary"):
-                for _k in ["df", "ev", "la_date", "la_show_all",
-                           "mb_date", "tgt_date", "tgt_shift", "g_kw", "g_rg"]:
-                    if _k in st.session_state:
-                        del st.session_state[_k]
+                # 重置為完全空白的 DataFrame（含欄位結構，不含任何資料）
+                st.session_state.df = pd.DataFrame(columns=[
+                    "店號", "店名", "型態", "原始日期", "原始班別",
+                    "目前日期", "目前班別", "預定盤點者",
+                    "_src", "_is_new", "_loc",
+                ])
+                st.session_state.ev = 0
                 st.session_state.confirm_clear = False
                 st.rerun()
         with _cc2:
