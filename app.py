@@ -12,10 +12,72 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-  .block-container { padding-top: 0.5rem; padding-bottom: 1rem; }
-  [data-testid="stMetricValue"] { font-size: 1.35rem; }
-  h3 { margin-bottom: 0.15rem; margin-top: 0; }
-  div[data-testid="column"] > div { padding: 0 3px; }
+  /* ── 最大化可用寬度 ── */
+  .block-container {
+      padding-top: 0.8rem !important;
+      padding-bottom: 1rem !important;
+      padding-left: 1.5rem !important;
+      padding-right: 1.5rem !important;
+      max-width: 100% !important;
+  }
+
+  /* ── 全域基礎字體放大 ── */
+  html, body, [class*="css"] { font-size: 15px; }
+
+  /* ── 標題 ── */
+  h1 { font-size: 1.8rem !important; margin-bottom: 0.3rem !important; }
+  h2 { font-size: 1.4rem !important; margin-bottom: 0.2rem !important; }
+  h3 { font-size: 1.15rem !important; margin-bottom: 0.2rem !important; margin-top: 0 !important; }
+
+  /* ── Metric ── */
+  [data-testid="stMetricValue"] { font-size: 1.6rem !important; }
+  [data-testid="stMetricLabel"] { font-size: 0.9rem !important; }
+
+  /* ── 按鈕：放大文字 + 增加內距 + 固定最小高度 ── */
+  [data-testid="stButton"] > button {
+      font-size: 1rem !important;
+      font-weight: 500 !important;
+      padding: 0.5rem 0.8rem !important;
+      min-height: 2.6rem !important;
+      border-radius: 6px !important;
+      width: 100% !important;
+  }
+
+  /* ── 輸入欄位 label 放大 ── */
+  [data-testid="stSelectbox"] label,
+  [data-testid="stDateInput"] label,
+  [data-testid="stTextInput"] label,
+  [data-testid="stCheckbox"] label,
+  [data-testid="stFileUploader"] label {
+      font-size: 0.95rem !important;
+      font-weight: 500 !important;
+  }
+
+  /* ── selectbox / date_input 選項文字 ── */
+  [data-testid="stSelectbox"] > div > div,
+  [data-testid="stDateInput"] input {
+      font-size: 0.95rem !important;
+  }
+
+  /* ── caption 字體 ── */
+  [data-testid="stCaptionContainer"] p { font-size: 0.9rem !important; }
+
+  /* ── 三欄間距 ── */
+  div[data-testid="column"] > div { padding: 0 8px !important; }
+
+  /* ── data_editor 圓角框 ── */
+  [data-testid="stDataEditor"] { border-radius: 8px !important; }
+
+  /* ── sidebar ── */
+  [data-testid="stSidebar"] { font-size: 0.9rem !important; }
+  [data-testid="stSidebar"] label { font-size: 0.9rem !important; }
+  [data-testid="stSidebar"] [data-testid="stButton"] > button {
+      font-size: 0.9rem !important;
+      min-height: 2.2rem !important;
+  }
+
+  /* ── divider 間距縮小 ── */
+  hr { margin: 0.5rem 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -574,7 +636,7 @@ st.divider()
 fdf = _apply_global(st.session_state.df)
 ev  = st.session_state.ev
 
-col_l, col_m, col_r = st.columns(3, gap="medium")
+col_l, col_m, col_r = st.columns(3, gap="large")
 
 # ─── LEFT : 異動店鋪 ──────────────────────────────────────────────────────────
 with col_l:
@@ -600,7 +662,7 @@ with col_l:
         key=f"le_{ev}",
         use_container_width=True,
         hide_index=True,
-        height=290,
+        height=420,
         column_config=_CC_LEFT,
         disabled=_DIS_LEFT,
     )
@@ -635,7 +697,7 @@ with col_m:
         key=f"me_{ev}",
         use_container_width=True,
         hide_index=True,
-        height=290,
+        height=420,
         column_config=_CC_MID,
         disabled=_DIS_MID,
     )
@@ -667,7 +729,7 @@ with col_r:
         key=f"re_{ev}",
         use_container_width=True,
         hide_index=True,
-        height=230,
+        height=320,
         column_config=_CC_RIGHT,
         disabled=_DIS_RIGHT,
     )
