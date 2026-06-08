@@ -18,3 +18,7 @@ desktop.ini
 *.xlsx
 *.xls
 *.csv
+
+# Installer build artifacts
+_installer/app_package/
+_installer/dist/
