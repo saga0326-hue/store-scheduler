@@ -4,18 +4,18 @@ Dim fso, appDir, pythonExe, appPy, ws
 Set fso = CreateObject("Scripting.FileSystemObject")
 appDir = fso.GetParentFolderName(WScript.ScriptFullName)
 
-pythonExe = appDir & "\python\python.exe"
+pythonExe = appDir & "\venv\Scripts\python.exe"
 appPy     = appDir & "\app.py"
 
 Set ws = CreateObject("WScript.Shell")
 ws.CurrentDirectory = appDir
 
-' Start Streamlit server (hidden window - no CMD popup)
+' Start Streamlit (hidden, no CMD window)
 ws.Run """" & pythonExe & """ -m streamlit run """ & appPy & _
     """ --server.headless true --server.port 8501" & _
     " --browser.gatherUsageStats false", 0, False
 
-' Wait for server to boot up
+' Wait for server to boot
 WScript.Sleep 5000
 
 ' Open browser
