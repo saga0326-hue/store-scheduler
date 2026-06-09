@@ -586,20 +586,36 @@ with gf5:
 st.divider()
 
 # ─────────────────────────────────────────────────────────────────────────────
-# THREE-COLUMN SCHEDULING AREA
-# Each column filters exclusively on _loc — no overlap is possible.
+# MAIN LAYOUT : left panels (top / middle / bottom) + right comparison panel
 # ─────────────────────────────────────────────────────────────────────────────
 fdf = _apply_global(st.session_state.df)
 ev  = st.session_state.ev
 
-col_l, col_m, col_r = st.columns(3, gap="large")
+# Status computation (needed by both comparison panel and export)
+def _compute_status(row) -> str:
+    if row["_is_new"]:
+        return "🔵 新增異動"
+    if row["_loc"] == "right":
+        return "🔴 暫存中"
+    curr = _fmt_date(row["目前日期"])
+    orig = _fmt_date(row["原始日期"])
+    if orig == curr and row["原始班別"] == row["目前班別"]:
+        return "🟢 未變動"
+    return "🟡 已變更"
 
-# ─── LEFT : 異動店鋪 ──────────────────────────────────────────────────────────
-with col_l:
-    st.markdown("### 📋 異動店鋪")
+cdf = st.session_state.df.copy()
+cdf["狀態"] = cdf.apply(_compute_status, axis=1)
+
+col_panels, col_compare = st.columns([3, 1.4], gap="large")
+
+# ═══ LEFT : THREE STACKED PANELS ═════════════════════════════════════════════
+with col_panels:
+
+    # ── TOP : 異動店鋪（預計要排的資料）──────────────────────────────────────────
+    st.markdown("### 📋 異動店鋪（預計要排）")
     _dc1, _dc2 = st.columns([3, 2])
     with _dc1:
-        la_date = st.date_input("日期 A", key="la_date")
+        la_date = st.date_input("日期", key="la_date")
     with _dc2:
         st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
         la_show_all = st.checkbox("顯示全部日期", key="la_show_all")
@@ -618,7 +634,7 @@ with col_l:
         key=f"le_{ev}",
         use_container_width=True,
         hide_index=True,
-        height=420,
+        height=220,
         column_config=_CC_LEFT,
         disabled=_DIS_LEFT,
     )
@@ -626,22 +642,23 @@ with col_l:
 
     b_l1, b_l2 = st.columns(2)
     with b_l1:
-        if st.button("➡️ 移至現行班表", key="l2m", use_container_width=True):
+        if st.button("⬇️ 移至現行班表", key="l2m", use_container_width=True):
             if _move_to_mid(l_sel, st.session_state.mb_date):
                 st.rerun()
             else:
                 st.toast("請先勾選店舖", icon="⚠️")
     with b_l2:
-        if st.button("🗄️ 移至右欄暫存", key="l2r", use_container_width=True):
+        if st.button("🗄️ 移至暫存區", key="l2r", use_container_width=True):
             if _move_to_right(l_sel):
                 st.rerun()
             else:
                 st.toast("請先勾選店舖", icon="⚠️")
 
-# ─── MIDDLE : 現行班表 ────────────────────────────────────────────────────────
-with col_m:
-    st.markdown("### 📅 現行班表")
-    mb_date = st.date_input("日期 B", key="mb_date")
+    st.divider()
+
+    # ── MIDDLE : 現行班表（匯入的班表）───────────────────────────────────────────
+    st.markdown("### 📅 現行班表（匯入班表）")
+    mb_date = st.date_input("日期", key="mb_date")
 
     mb_str = mb_date.strftime("%Y-%m-%d")
     m_src  = fdf[fdf["_loc"] == "middle"]
@@ -653,7 +670,7 @@ with col_m:
         key=f"me_{ev}",
         use_container_width=True,
         hide_index=True,
-        height=420,
+        height=220,
         column_config=_CC_MID,
         disabled=_DIS_MID,
     )
@@ -661,116 +678,98 @@ with col_m:
 
     b_m1, b_m2 = st.columns(2)
     with b_m1:
-        if st.button("⬅️ 移回左欄異動", key="m2l", use_container_width=True):
+        if st.button("⬆️ 移回異動區", key="m2l", use_container_width=True):
             if _move_to_left(m_sel, st.session_state.la_date):
                 st.rerun()
             else:
                 st.toast("請先勾選店舖", icon="⚠️")
     with b_m2:
-        if st.button("🗄️ 移至右欄暫存", key="m2r", use_container_width=True):
+        if st.button("🗄️ 移至暫存區", key="m2r", use_container_width=True):
             if _move_to_right(m_sel):
                 st.rerun()
             else:
                 st.toast("請先勾選店舖", icon="⚠️")
 
-# ─── RIGHT : 暫存大水庫 ───────────────────────────────────────────────────────
-with col_r:
-    st.markdown("### 🗄️ 可以移出的店舖（暫存大水庫）")
+    st.divider()
+
+    # ── BOTTOM : 暫存區（暫存的資料）─────────────────────────────────────────────
+    st.markdown("### 🗄️ 暫存區")
 
     r_df = fdf[fdf["_loc"] == "right"]
     st.caption(f"暫存店舖（**{len(r_df)}**）")
 
-    r_ed = st.data_editor(
-        _edf_right(r_df),
-        key=f"re_{ev}",
+    r_c1, r_c2 = st.columns([2, 1])
+    with r_c1:
+        r_ed = st.data_editor(
+            _edf_right(r_df),
+            key=f"re_{ev}",
+            use_container_width=True,
+            hide_index=True,
+            height=190,
+            column_config=_CC_RIGHT,
+            disabled=_DIS_RIGHT,
+        )
+        r_sel = _get_ids(r_ed, r_df)
+    with r_c2:
+        st.markdown("**指派控制**")
+        tgt_date  = st.date_input("指派日期", key="tgt_date")
+        tgt_shift = st.selectbox("指派班別", ["上午", "下午"], key="tgt_shift")
+        if st.button("✅ 指派至現行班表", key="assign", use_container_width=True):
+            if _assign_from_right(r_sel, tgt_date, tgt_shift):
+                st.rerun()
+            else:
+                st.toast("請先勾選店舖", icon="⚠️")
+
+# ═══ RIGHT : COMPARISON PANEL（隱藏區，預設收合）═════════════════════════════
+with col_compare:
+    st.markdown("### 📊 異動對照表")
+
+    # Status summary metrics
+    mc1, mc2 = st.columns(2)
+    with mc1:
+        st.metric("🟢 未變動", int((cdf["狀態"] == "🟢 未變動").sum()))
+        st.metric("🔴 暫存中", int((cdf["狀態"] == "🔴 暫存中").sum()))
+    with mc2:
+        st.metric("🟡 已變更", int((cdf["狀態"] == "🟡 已變更").sum()))
+        st.metric("🔵 新增",   int((cdf["狀態"] == "🔵 新增異動").sum()))
+
+    chg_only = st.checkbox("📌 僅顯示變更項目", key="chg_only")
+
+    tbl = pd.DataFrame({
+        "店號":     cdf["店號"],
+        "店名":     cdf["店名"],
+        "狀態":     cdf["狀態"],
+        "原本日期": cdf["原始日期"].apply(_fmt_date),
+        "新日期":   cdf["目前日期"].apply(_fmt_date),
+        "原本班別": cdf["原始班別"],
+        "新班別":   cdf["目前班別"],
+        "預定盤點者": cdf["預定盤點者"],
+    }).reset_index(drop=True)
+
+    if chg_only:
+        tbl = tbl[tbl["狀態"] != "🟢 未變動"]
+
+    _kw = st.session_state.get("g_kw", "").strip()
+    _rg = st.session_state.get("g_rg", "全選")
+    if _kw:
+        tbl = tbl[
+            tbl["店號"].str.contains(_kw, case=False, na=False) |
+            tbl["店名"].str.contains(_kw, case=False, na=False)
+        ]
+    if _rg != "全選":
+        tbl = tbl[tbl["店號"].isin(
+            cdf[cdf["型態"] == _rg]["店號"]
+        )]
+
+    st.dataframe(
+        tbl,
         use_container_width=True,
         hide_index=True,
-        height=320,
-        column_config=_CC_RIGHT,
-        disabled=_DIS_RIGHT,
+        height=680,
+        column_config={
+            "狀態": st.column_config.TextColumn("狀態", width="small"),
+        },
     )
-    r_sel = _get_ids(r_ed, r_df)
-
-    st.divider()
-    st.markdown("**⬇️ 指派控制器**")
-    tgt_date  = st.date_input("指派目標日期", key="tgt_date")
-    tgt_shift = st.selectbox("指派目標班別", ["上午", "下午"], key="tgt_shift")
-
-    if st.button("✅ 確認指派並移回現行班表", key="assign", use_container_width=True):
-        if _assign_from_right(r_sel, tgt_date, tgt_shift):
-            st.rerun()
-        else:
-            st.toast("請先勾選店舖", icon="⚠️")
-
-st.divider()
-
-# ─────────────────────────────────────────────────────────────────────────────
-# CHANGE COMPARISON TABLE
-# ─────────────────────────────────────────────────────────────────────────────
-st.markdown("## 📊 異動對照表")
-
-
-def _compute_status(row) -> str:
-    if row["_is_new"]:
-        return "🔵 新增異動"
-    if row["_loc"] == "right":
-        return "🔴 暫存中"
-    curr = _fmt_date(row["目前日期"])
-    orig = _fmt_date(row["原始日期"])
-    if orig == curr and row["原始班別"] == row["目前班別"]:
-        return "🟢 未變動"
-    return "🟡 已變更"
-
-
-cdf = st.session_state.df.copy()
-cdf["狀態"] = cdf.apply(_compute_status, axis=1)
-
-sc1, sc2, sc3, sc4, sc5 = st.columns([1, 1, 1, 1, 2])
-with sc1:
-    st.metric("🟢 未變動", int((cdf["狀態"] == "🟢 未變動").sum()))
-with sc2:
-    st.metric("🟡 已變更", int((cdf["狀態"] == "🟡 已變更").sum()))
-with sc3:
-    st.metric("🔴 暫存中", int((cdf["狀態"] == "🔴 暫存中").sum()))
-with sc4:
-    st.metric("🔵 新增", int((cdf["狀態"] == "🔵 新增異動").sum()))
-with sc5:
-    chg_only = st.checkbox("📌 僅顯示有發生變更的項目", key="chg_only")
-
-tbl = pd.DataFrame({
-    "店號":        cdf["店號"],
-    "店名":        cdf["店名"],
-    "型態":        cdf["型態"],
-    "原本日期":    cdf["原始日期"].apply(_fmt_date),
-    "原本班別":    cdf["原始班別"],
-    "➡️ 狀態變更": cdf["狀態"],
-    "更動後日期":  cdf["目前日期"].apply(_fmt_date),
-    "更動後班別":  cdf["目前班別"],
-    "預定盤點者":  cdf["預定盤點者"],
-}).reset_index(drop=True)
-
-if chg_only:
-    tbl = tbl[tbl["➡️ 狀態變更"] != "🟢 未變動"]
-
-_kw = st.session_state.get("g_kw", "").strip()
-_rg = st.session_state.get("g_rg", "全選")
-if _kw:
-    tbl = tbl[
-        tbl["店號"].str.contains(_kw, case=False, na=False) |
-        tbl["店名"].str.contains(_kw, case=False, na=False)
-    ]
-if _rg != "全選":
-    tbl = tbl[tbl["型態"] == _rg]
-
-st.dataframe(
-    tbl,
-    use_container_width=True,
-    hide_index=True,
-    height=400,
-    column_config={
-        "➡️ 狀態變更": st.column_config.TextColumn("➡️ 狀態變更", width="medium"),
-    },
-)
 
 st.divider()
 
